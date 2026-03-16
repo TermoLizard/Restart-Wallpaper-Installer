@@ -1,3 +1,14 @@
 @echo off
-powershell -WindowStyle Hidden -Command "Add-Type -AssemblyName System.Windows.Forms; $f=New-Object System.Windows.Forms.OpenFileDialog; $f.Filter='Images|*.jpg;*.png;*.bmp'; if($f.ShowDialog() -eq 'OK'){ $p=$f.FileName; Set-ItemProperty -Path 'HKCU:\Control Panel\Desktop' -Name Wallpaper -Value $p; Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class Wallet { [DllImport(\"user32.dll\", CharSet=CharSet.Auto)] public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni); }'; [Wallet]::SystemParametersInfo(20, 0, $p, 3) }"
-(goto) 2>nul & del "%~f0"
+set "ps_cmd=Add-Type -AssemblyName System.Windows.Forms; $f=New-Object System.Windows.Forms.OpenFileDialog; $f.Filter='Images|*.jpg;*.png;*.bmp'; if($f.ShowDialog() -eq 'OK'){$f.FileName}"
+
+for /f "delims=" %%i in ('powershell -command "%ps_cmd%"') do set "pic=%%i"
+
+if defined pic (
+    reg add "HKCU\Control Panel\Desktop" /v Wallpaper /t REG_SZ /d "%pic%" /f
+    RUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters
+    echo Wallpaper set to: %pic%
+) else (
+    echo No file selected.
+)
+pause
+del "%~f0"
